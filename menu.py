@@ -5,6 +5,7 @@ import hashlib
 import secrets
 import string
 import urllib.request
+import time
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
@@ -45,7 +46,7 @@ def modulo_ciberseguridad():
         
         tabla.add_row("1", "Ver IP local e interfaces de red", "[1] Muestra la dirección IP actual y configuración de red de la máquina.")
         tabla.add_row("2", "Prueba de conectividad (Ping a Google)", "[2] Verifica la salida a internet y mide latencia hacia servidores externos.")
-        tabla.add_row("3", "Escanear dispositivos activos (Ping Rango)", "[3] Busca dispositivos activos mandando pings en el segmento local.")
+        tabla.add_row("3", "Escanear dispositivos activos (Ping 1-250)", "[3] Busca dispositivos activos en todo el segmento local (con límite de 2 min).")
         tabla.add_row("4", "Escáner ARP de Dispositivos Locales", "[4] Lista los dispositivos en red mediante la tabla ARP del sistema.")
         tabla.add_row("5", "Escanear puertos comunes en una IP", "[5] Revisa qué servicios (HTTP, SSH, MySQL, MU Online) están escuchando.")
         tabla.add_row("6", "Inspección de Banner (Banner Grabbing)", "[6] Se conecta a un puerto para capturar la versión del software remoto.")
@@ -82,10 +83,10 @@ def modulo_ciberseguridad():
         elif opcion == "3":
             limpiar_pantalla()
             ip_local = obtener_ip_local()
-            console.print(Panel("[bold cyan]🔍 Escáner de Dispositivos Locales (Ping)[/bold cyan]\n[dim]Uso: Mapear la red local mediante eco ICMP para descubrir equipos activos.[/dim]", expand=False))
+            console.print(Panel("[bold cyan]🔍 Escáner Masivo de Red (Ping 1-250)[/bold cyan]\n[dim]Uso: Mapear la red local completa buscando equipos activos con control de tiempo de 2 min.[/dim]", expand=False))
             
             console.print(f"[bold cyan]🔍 IP Detectada:[/bold cyan] [green]{ip_local}[/green]")
-            console.print("[1] Escanear el segmento de tu IP actual")
+            console.print("[1] Escanear el segmento de tu IP actual (Ej: 192.168.X.X)")
             console.print("[2] Escanear red doméstica típica (192.168.1.X)")
             sub_op = input("\nElige una opción de red [1/2] (Default 2): ")
             
@@ -94,21 +95,33 @@ def modulo_ciberseguridad():
             else:
                 segmento = "192.168.1."
                 
-            console.print(f"\n[bold yellow]Buscando dispositivos activos en el rango {segmento}1 a {segmento}20...[/bold yellow]\n")
+            console.print(f"\n[bold yellow]Iniciando escaneo masivo en el rango {segmento}1 al {segmento}250... (Límite: 2 minutos)[/bold yellow]\n")
 
-            tabla_red = Table(title=f"Dispositivos en Red ({segmento}X)")
+            tabla_red = Table(title=f"Dispositivos Activos en Red ({segmento}X)")
             tabla_red.add_column("Dirección IP", style="cyan", justify="center")
             tabla_red.add_column("Estado", style="bold green", justify="center")
 
-            for i in range(1, 21):
+            inicio_tiempo = time.time()
+            limite_tiempo = 120  # 120 segundos = 2 minutos
+            encontrados = 0
+
+            for i in range(1, 251):
+                # Control de tiempo máximo (2 minutos)
+                if time.time() - inicio_tiempo > limite_tiempo:
+                    console.print("\n[bold red]⚠️ Se alcanzó el límite de tiempo de 2 minutos. Deteniendo escaneo por seguridad.[/bold red]")
+                    break
+
                 ip_destino = f"{segmento}{i}"
+                # Timeout de 0.5s por IP para que sea ágil
                 comando = ["ping", "-c", "1", "-W", "1", ip_destino]
                 resultado = subprocess.run(comando, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 
                 if resultado.returncode == 0:
                     tabla_red.add_row(ip_destino, "ACTIVO 🟢")
+                    encontrados += 1
 
             console.print(tabla_red)
+            console.print(f"\n[green]Escaneo finalizado. Dispositivos activos encontrados: {encontrados}[/green]")
             console.print("\n[bold yellow]Presiona Enter para volver...[/bold yellow]", end="")
             input()
 
@@ -169,7 +182,6 @@ def modulo_ciberseguridad():
                 s.settimeout(2.0)
                 s.connect((target_bg, port_bg))
                 
-                # Intentar recibir datos del servicio si responde solo
                 banner = s.recv(1024).decode('utf-8', errors='ignore')
                 if banner.strip():
                     console.print(f"[bold green]¡Banner Capturado! 🟢[/bold green]\n{banner}")
@@ -198,7 +210,7 @@ def modulo_ciberseguridad():
 
         elif opcion == "8":
             limpiar_pantalla()
-            console.print(Panel("[bold cyan]🔐 Generador de Claves y Cálculo de Entropía[/bold cyan]\n[dim]Uso: Crear contraseñas complejas utilizando aleatoriedad criptográfica segura.[/dim]", expand=False))
+            console.print(Panel("[bold cyan]🔐 Generador de Claves y Entropía[/bold cyan]\n[dim]Uso: Crear contraseñas complejas utilizando aleatoriedad criptográfica segura.[/dim]", expand=False))
             longitud = int(input("Ingresa la longitud de la contraseña (recomendado 16+): ") or "16")
             
             caracteres = string.ascii_letters + string.digits + string.punctuation
