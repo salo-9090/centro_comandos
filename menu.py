@@ -1,264 +1,256 @@
-import os
 import socket
-import subprocess
-import hashlib
-import secrets
-import string
-from concurrent.futures import ThreadPoolExecutor
+import os
+from google import genai
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
+from rich.table import Table
 
 console = Console()
 
-def limpiar():
-    os.system('clear')
 
-def obtener_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+# ==========================================
+# 1. FUNCIÓN: Enviar mensaje por red local
+# ==========================================
+def enviar_mensaje_menu():
+  console.print(
+      "\n[bold magenta]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold"
+      " magenta]"
+  )
+  console.print(
+      "[bold cyan]📡 ENVIAR MENSAJE POR RED LOCAL[/bold cyan]",
+      justify="center",
+  )
+  console.print(
+      "[bold magenta]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold"
+      " magenta]\n"
+  )
+
+  ip_destino = input("🌐 Ingresá la IP de destino (ej. 127.0.0.1): ")
+  puerto_destino = int(input("🔌 Ingresá el puerto (ej. 5000): "))
+  mensaje = input("💬 Escribí el mensaje que querés enviar: ")
+
+  try:
+    cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cliente.connect((ip_destino, puerto_destino))
+    cliente.send(mensaje.encode("utf-8"))
+    console.print(
+        "\n[bold green]✔ [+] ¡Mensaje enviado con éxito a la"
+        " red![/bold green]"
+    )
+    cliente.close()
+  except Exception as e:
+    console.print(
+        f"\n[bold red]❌ [-] Error de conexión: {e}[/bold red]"
+    )
+
+  console.print(
+      "\n[bold yellow]👉 Presiona Enter para continuar...[/bold yellow]", end=""
+  )
+  input()
+
+
+# ==========================================
+# 2. FUNCIÓN: Chat con IA en la terminal
+# ==========================================
+def chat_con_ia_menu():
+  try:
+    client = genai.Client()
+  except Exception:
+    console.print(
+        "[bold red]❌ Error: Asegurate de configurar tu GEMINI_API_KEY en las"
+        " variables de entorno.[/bold red]"
+    )
+    console.print(
+        "\n[bold yellow]👉 Presiona Enter para continuar...[/bold yellow]",
+        end="",
+    )
+    input()
+    return
+
+  console.print(
+      "\n[bold magenta]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold"
+      " magenta]"
+  )
+  console.print(
+      "[bold bright_cyan]🤖 CHAT CON IA - GEMINI[/bold bright_cyan]",
+      justify="center",
+  )
+  console.print(
+      "[dim](Escribí 'salir' para volver al menú principal)[/dim]",
+      justify="center",
+  )
+  console.print(
+      "[bold magenta]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/bold"
+      " magenta]\n"
+  )
+
+  try:
+    chat = client.chats.create(model="gemini-2.5-flash")
+  except Exception as e:
+    console.print(
+        f"[bold red]❌ Error al iniciar el chat: {e}[/bold red]"
+    )
+    console.print(
+        "\n[bold yellow]👉 Presiona Enter para continuar...[/bold yellow]",
+        end="",
+    )
+    input()
+    return
+
+  while True:
+    pregunta = input("\n👤 Tú: ")
+    if pregunta.lower() in ["salir", "exit", "q"]:
+      break
+
     try:
-        s.connect(('10.255.255.255', 1))
-        ip = s.getsockname()[0]
-    except:
-        ip = '127.0.0.1'
-    finally:
-        s.close()
-    return ip
+      console.print("[bold yellow]⚡ Pensando...[/bold yellow]")
+      respuesta = chat.send_message(pregunta)
+      console.print(
+          f"\n[bold bright_green]🤖 Gemini:[/bold bright_green] {respuesta.text}"
+      )
+    except Exception as e:
+      console.print(
+          f"[bold red]❌ Error al comunicarse con la IA: {e}[/bold red]"
+      )
 
-def modulo_sistema():
-    limpiar()
-    console.print(Panel("[bold cyan]📊 Módulo de Sistema[/bold cyan]\n[dim]Diagnóstico y estado del entorno actual[/dim]", expand=False))
-    res = subprocess.run(["uname", "-a"], capture_output=True, text=True)
-    console.print(f"\n[green]Información del Sistema:[/green]\n{res.stdout}")
-    console.print("\n[yellow]Presiona Enter para volver...[/yellow]", end="")
-    input()
 
-def modulo_ciberseguridad():
-    while True:
-        limpiar()
-        console.print(Panel("[bold red]🛡️ Ciberseguridad & Redes[/bold red]\n[dim]Herramientas de auditoría local, puertos y cámaras[/dim]", expand=False))
-        
-        tabla = Table(title="Panel de Auditoría Avanzada")
-        tabla.add_column("Opción", style="cyan", justify="center")
-        tabla.add_column("Herramienta / Acción", style="green")
-        tabla.add_column("Descripción", style="dim white")
-        
-        tabla.add_row("1", "Ver IP local y red", "Muestra tu dirección IP y configuración.")
-        tabla.add_row("2", "Ping a Google (Internet)", "Verifica conectividad y salida a la web.")
-        tabla.add_row("3", "Escanear red local (Ping 1-250)", "Mapea los dispositivos activos en el Wi-Fi.")
-        tabla.add_row("4", "Tabla ARP de dispositivos", "Lista las conexiones recientes de la red.")
-        tabla.add_row("5", "Escanear puertos en una IP", "Revisa servicios abiertos (HTTP, SSH, etc.).")
-        tabla.add_row("6", "Generador de Contraseñas", "Crea claves seguras con alta entropía.")
-        tabla.add_row("7", "Auditor MD5 por Diccionario", "Prueba hashes contra un wordlist.txt.")
-        tabla.add_row("8", "Calculadora Multihash", "Convierte textos a MD5 y SHA256.")
-        tabla.add_row("9", "Ejecutar comando Bash", "Lanza comandos del sistema operativo al instante.")
-        tabla.add_row("10", "📷 Escáner de Cámaras IP", "Busca cámaras y dispositivos de video en la red.")
-        tabla.add_row("0", "Volver al Menú Principal", "Regresa al panel general.")
-        
-        console.print(tabla)
-        
-        op = input("\nSelecciona una opción [0-10]: ").strip()
-        
-        if op == "1":
-            limpiar()
-            console.print(f"[green]Tu IP local:[/green] [cyan]{obtener_ip()}[/cyan]\n")
-            os.system("ip addr")
-            console.print("\n[yellow]Presiona Enter para continuar...[/yellow]", end="")
-            input()
-            
-        elif op == "2":
-            limpiar()
-            os.system("ping -c 4 8.8.8.8")
-            console.print("\n[yellow]Presiona Enter para continuar...[/yellow]", end="")
-            input()
-            
-        elif op == "3":
-            limpiar()
-            ip_l = obtener_ip()
-            seg = ".".join(ip_l.split(".")[:-1]) + "."
-            console.print(f"[yellow]Escaneando segmento {seg}1-250...[/yellow]\n")
-            for i in range(1, 251):
-                res = os.system(f"ping -c 1 -W 1 {seg}{i} > /dev/null 2>&1")
-                if res == 0:
-                    console.print(f"[green][+] Dispositivo activo:[/green] {seg}{i}")
-            console.print("\n[yellow]Escaneo finalizado. Presiona Enter...[/yellow]", end="")
-            input()
+# ==========================================
+# 3. SUBMENÚ DE GIT (Opción 5)
+# ==========================================
+def menu_git():
+  while True:
+    console.clear()
+    console.print(
+        Panel.fit(
+            "[bold cyan]☁️ GESTOR DE SINCRONIZACIÓN GIT ☁️[/bold cyan]",
+            border_style="cyan",
+        )
+    )
+    console.print("[1] ⬆️ Subir cambios a GitHub (Add, Commit, Push)")
+    console.print("[2] ⬇️ Actualizar repositorio (Git Pull)")
+    console.print("[0] ↩️ Volver al Menú Principal")
 
-        elif op == "4":
-            limpiar()
-            os.system("arp -a")
-            console.print("\n[yellow]Presiona Enter para continuar...[/yellow]", end="")
-            input()
+    sub_op = input("\n👉 Selecciona opción [0-2]: ").strip()
 
-        elif op == "5":
-            limpiar()
-            target = input("Ingresa la IP a escanear (Ej. 127.0.0.1): ").strip() or "127.0.0.1"
-            puertos = [21, 22, 80, 443, 3306, 8080]
-            for p in puertos:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(0.3)
-                if s.connect_ex((target, p)) == 0:
-                    console.print(f"Puerto {p}: [green]ABIERTO 🟢[/green]")
-                else:
-                    console.print(f"Puerto {p}: [red]Cerrado 🔴[/red]")
-                s.close()
-            console.print("\n[yellow]Presiona Enter para continuar...[/yellow]", end="")
-            input()
+    if sub_op == "1":
+      console.print(
+          "[yellow]Subiendo cambios al repositorio...[/yellow]"
+      )
+      os.system("git add .")
+      mensaje_commit = input("Ingresá el mensaje para el commit: ")
+      os.system(f'git commit -m "{mensaje_commit}"')
+      os.system("git push")
+      input("\n[green]✔ Proceso finalizado. Presiona Enter...[/green]")
+    elif sub_op == "2":
+      console.print("[yellow]Actualizando desde el repositorio...[/yellow]")
+      os.system("git pull")
+      input("\n[green]✔ Proceso finalizado. Presiona Enter...[/green]")
+    elif sub_op == "0":
+      break
+    else:
+      console.print("[red]Opción inválida.[/red]")
+      input("Presiona Enter...")
 
-        elif op == "6":
-            limpiar()
-            chars = string.ascii_letters + string.digits + string.punctuation
-            pwd = ''.join(secrets.choice(chars) for _ in range(16))
-            console.print(f"\n[green]Contraseña generada:[/green] [yellow]{pwd}[/yellow]")
-            console.print("\n[yellow]Presiona Enter para continuar...[/yellow]", end="")
-            input()
 
-        elif op == "7":
-            limpiar()
-            console.print(Panel("[bold cyan]🔓 Auditor MD5 por Diccionario[/bold cyan]", expand=False))
-            wl = os.path.expanduser("~/wordlist.txt")
-            if not os.path.exists(wl):
-                with open(wl, "w") as f:
-                    f.write("123456\npassword\nadmin\nsalomon1030\n")
-            h_obj = input("Ingresa el Hash MD5 a auditar: ").strip()
-            if h_obj:
-                encontrado = False
-                with open(wl, "r", encoding="utf-8", errors="ignore") as f:
-                    for linea in f:
-                        palabra = linea.strip()
-                        if hashlib.md5(palabra.encode()).hexdigest().lower() == h_obj.lower():
-                            console.print(f"\n[green]¡CONTRASEÑA ENCONTRADA!:[/green] [bold yellow]{palabra}[/bold yellow]")
-                            encontrado = True
-                            break
-                if not encontrado:
-                    console.print("\n[red]❌ No se encontró coincidencia en el diccionario.[/red]")
-            console.print("\n[yellow]Presiona Enter para continuar...[/yellow]", end="")
-            input()
+# ==========================================
+# 4. BUCLE PRINCIPAL DEL MENÚ
+# ==========================================
+def mostrar_menu():
+  while True:
+    console.clear()
 
-        elif op == "8":
-            limpiar()
-            console.print(Panel("[bold cyan]🔑 Calculadora Multihash[/bold cyan]", expand=False))
-            texto = input("Texto a transformar: ").strip() or "CentroDeComandos"
-            console.print(f"\n[green]MD5:[/green] {hashlib.md5(texto.encode()).hexdigest()}")
-            console.print(f"[green]SHA256:[/green] {hashlib.sha256(texto.encode()).hexdigest()}")
-            console.print("\n[yellow]Presiona Enter para continuar...[/yellow]", end="")
-            input()
+    titulo_panel = Panel(
+        "[bold bright_yellow]⚡ CENTRO DE COMANDOS MAESTRO"
+        " ⚡[/bold bright_yellow]\n[italic bright_cyan]Panel Operativo v2.0 |"
+        " Terminal de Control[/italic bright_cyan]",
+        border_style="bright_magenta",
+        padding=(1, 4),
+    )
+    console.print(titulo_panel, justify="center")
 
-        elif op == "9":
-            limpiar()
-            cmd = input("Comando Bash: ")
-            if cmd.strip():
-                os.system(cmd)
-            console.print("\n[yellow]Presiona Enter para continuar...[/yellow]", end="")
-            input()
+    table = Table(
+        show_header=True,
+        header_style="bold bright_white on blue",
+        border_style="bright_cyan",
+        title_style="bold bright_yellow",
+        expand=False,
+    )
 
-        elif op == "10":
-            limpiar()
-            console.print(Panel("[bold cyan]📷 Escáner de Cámaras IP y Dispositivos[/bold cyan]", expand=False))
-            ip_l = obtener_ip()
-            seg = ".".join(ip_l.split(".")[:-1]) + "."
-            console.print(f"[yellow]Buscando cámaras en {seg}0/24 (Puertos 80, 554, 8080, 8000, 37777)...[/yellow]\n")
-            puertos_camara = [80, 554, 8080, 8000, 37777]
-            
-            def scan(i):
-                t = f"{seg}{i}"
-                for p in puertos_camara:
-                    try:
-                        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        s.settimeout(0.2)
-                        if s.connect_ex((t, p)) == 0:
-                            console.print(f"[green]🟢 Dispositivo/Cámara detectado![/green] IP: [cyan]{t}[/cyan] | Puerto: [yellow]{p}[/yellow]")
-                        s.close()
-                    except:
-                        pass
+    table.add_column("Opción", style="bold bright_green", justify="center")
+    table.add_column("Módulo / Herramienta", style="bold white")
+    table.add_column("Estado", style="dim cyan", justify="center")
 
-            with ThreadPoolExecutor(max_workers=30) as ex:
-                ex.map(scan, range(1, 255))
-            
-            console.print(f"\n[bold green]Escaneo finalizado.[/bold green]")
-            console.print("\n[yellow]Presiona Enter para continuar...[/yellow]", end="")
-            input()
+    table.add_row(
+        "[1]", "💻  Módulo de Sistema", "[green]● Activo[/green]"
+    )
+    table.add_row(
+        "[2]",
+        "🛡️   Ciberseguridad & Redes (Cámaras / Hashes)",
+        "[green]● Activo[/green]",
+    )
+    table.add_row(
+        "[3]", "🎬  Módulo Multimedia", "[green]● Activo[/green]"
+    )
+    table.add_row(
+        "[4]", "📦  Gestor PIP", "[green]● Activo[/green]"
+    )
+    table.add_row(
+        "[5]", "☁️   Sincronización Git (Subir / Actualizar)", "[bright_cyan]🔄 Git[/bright_cyan]"
+    )
+    table.add_row(
+        "[6]",
+        "💬  Enviar Mensaje por Red Local (Sockets)",
+        "[bright_yellow]⚡ Red[/bright_yellow]",
+    )
+    table.add_row(
+        "[7]",
+        "🤖  Chat con IA (Gemini 2.5 Flash)",
+        "[bright_magenta]✨ IA[/bright_magenta]",
+    )
+    table.add_row(
+        "[0]", "❌  Salir del Sistema", "[red]○ Off[/red]"
+    )
 
-        elif op == "0":
-            break
+    console.print(table)
+    console.print(
+        "\n[dim bright_white]────────────── Status: Sistema listo para recibir"
+        " instrucciones ──────────────[/dim bright_white]"
+    )
 
-def modulo_multimedia():
-    limpiar()
-    console.print(Panel("[bold magenta]🎬 Módulo Multimedia[/bold magenta]\n[dim]Herramientas multimedia y reproducción[/dim]", expand=False))
-    console.print("\n[yellow]Presiona Enter para volver...[/yellow]", end="")
-    input()
+    opcion = input("\n👉 Selecciona una opción [0-7]: ").strip()
 
-def modulo_pip():
-    limpiar()
-    console.print(Panel("[bold yellow]📦 Gestor de Librerías PIP[/bold yellow]\n[dim]Listado de paquetes instalados[/dim]", expand=False))
-    subprocess.run(["pip", "list"])
-    console.print("\n[yellow]Presiona Enter para volver...[/yellow]", end="")
-    input()
+    if opcion == "1":
+      console.print("[yellow]Ejecutando Módulo de Sistema...[/yellow]")
+      input("Presiona Enter para continuar...")
+    elif opcion == "2":
+      console.print(
+          "[yellow]Ejecutando Ciberseguridad & Redes...[/yellow]"
+      )
+      input("Presiona Enter para continuar...")
+    elif opcion == "3":
+      console.print("[yellow]Ejecutando Módulo Multimedia...[/yellow]")
+      input("Presiona Enter para continuar...")
+    elif opcion == "4":
+      console.print("[yellow]Ejecutando Gestor PIP...[/yellow]")
+      input("Presiona Enter para continuar...")
+    elif opcion == "5":
+      menu_git()
+    elif opcion == "6":
+      enviar_mensaje_menu()
+    elif opcion == "7":
+      chat_con_ia_menu()
+    elif opcion == "0":
+      console.print(
+          "[bold bright_red]Saliendo del Centro de Comandos... ¡Hasta"
+          " luego![/bold bright_red]"
+      )
+      break
+    else:
+      console.print(
+          "[bold red]❌ Opción inválida. Intenta nuevamente.[/bold red]"
+      )
+      input("Presiona Enter para continuar...")
 
-def modulo_git():
-    while True:
-        limpiar()
-        console.print(Panel("[bold blue]☁️ Sincronización Git[/bold blue]", expand=False))
-        tabla_git = Table(title="Control de Versiones Git")
-        tabla_git.add_column("Opción", style="cyan", justify="center")
-        tabla_git.add_column("Acción", style="green")
-        tabla_git.add_row("1", "📥 Git Pull (Actualizar)")
-        tabla_git.add_row("2", "📤 Git Push (Guardar cambios)")
-        tabla_git.add_row("3", "📊 Git Status (Estado)")
-        tabla_git.add_row("0", "⬅️ Volver")
-        console.print(tabla_git)
-        
-        op = input("\nSelecciona una opción: ").strip()
-        if op == "1":
-            subprocess.run(["git", "pull", "origin", "main"])
-            console.print("\n[yellow]Enter para continuar...[/yellow]", end="")
-            input()
-        elif op == "2":
-            subprocess.run(["git", "add", "."])
-            msg = input("Mensaje del commit: ") or "Actualización menú completo"
-            subprocess.run(["git", "commit", "-m", msg])
-            subprocess.run(["git", "push"])
-            console.print("\n[yellow]Enter para continuar...[/yellow]", end="")
-            input()
-        elif op == "3":
-            subprocess.run(["git", "status"])
-            console.print("\n[yellow]Enter para continuar...[/yellow]", end="")
-            input()
-        elif op == "0":
-            break
-
-def main():
-    while True:
-        limpiar()
-        console.print(Panel("[bold yellow]✨ CENTRO DE COMANDOS MAESTRO ✨[/bold yellow]", expand=False))
-        
-        tabla_ppal = Table(title="Menú Principal")
-        tabla_ppal.add_column("Opción", style="cyan", justify="center")
-        tabla_ppal.add_column("Módulo", style="green")
-        
-        tabla_ppal.add_row("1", "📊 Módulo de Sistema")
-        tabla_ppal.add_row("2", "🛡️ Ciberseguridad & Redes (Cámaras / Hashes)")
-        tabla_ppal.add_row("3", "🎬 Módulo Multimedia")
-        tabla_ppal.add_row("4", "📦 Gestor PIP")
-        tabla_ppal.add_row("5", "☁️ Sincronización Git")
-        tabla_ppal.add_row("0", "❌ Salir")
-        
-        console.print(tabla_ppal)
-        
-        op = input("\nSelecciona opción [0-5]: ").strip()
-        if op == "1":
-            modulo_sistema()
-        elif op == "2":
-            modulo_ciberseguridad()
-        elif op == "3":
-            modulo_multimedia()
-        elif op == "4":
-            modulo_pip()
-        elif op == "5":
-            modulo_git()
-        elif op == "0":
-            console.print("[red]Saliendo del Centro de Comandos...[/red]")
-            break
 
 if __name__ == "__main__":
-    main()
+  mostrar_menu()
