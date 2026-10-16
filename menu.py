@@ -154,10 +154,10 @@ def menu_git():
             msg = input("Mensaje del commit: ")
             os.system(f'git commit -m "{msg}"')
             os.system("git push")
-            input("\n[green]✔ Sincronización completada. Enter...[/green]")
+            console.input("\n[green]✔ Sincronización completada. Enter para continuar...[/green]")
         elif op == "2":
             os.system("git pull")
-            input("\n[green]✔ Repositorio actualizado. Enter...[/green]")
+            console.input("\n[green]✔ Repositorio actualizado. Enter para continuar...[/green]")
         elif op == "3":
             os.system("git status")
             input("\nPresiona Enter para continuar...")
@@ -207,7 +207,6 @@ def chat_con_ia_menu():
     while True:
         pregunta = console.input("\n[bold bright_cyan]👤 Tú:[/bold bright_cyan] ").strip()
         
-        # Única forma de salir tipeando el comando específico /salir
         if pregunta.lower() == "/salir":
             console.print("\n[bold yellow]↩️ Saliendo del chat inteligente...[/bold yellow]")
             break
