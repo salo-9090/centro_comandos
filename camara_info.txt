@@ -1,0 +1,7 @@
+=== DATOS DE LA CÁMARA ===
+IP: 192.168.0.106
+Puerto RTSP: 554
+URL de acceso: rtsp://192.168.0.106:554/
+Contraseña: (escribe_tu_clave_aqui)
+Marca / Sistema: TAS-Tech IPCam
+Servidor de Streaming: TAS-Tech Streaming Server V100R001
