@@ -5,6 +5,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from rich.align import Align
+from rich.markdown import Markdown
 
 console = Console()
 
@@ -22,7 +23,7 @@ def menu_sistema():
         console.print("[bold green][3][/bold green] 🌐 [bold]3 - Configuración de Red[/bold]   -> Consultar interfaces de red, IPs y estado local (ip a)")
         console.print("[bold red][0][/bold red] ↩️ [bold]0 - Volver[/bold]                 -> Retornar al Centro de Comandos Principal")
 
-        op = input("\n[bold yellow]👉 Selecciona una opción [0-3]: [/bold yellow]").strip()
+        op = input("\n👉 Selecciona una opción [0-3]: ").strip()
         if op == "1":
             os.system("top -n 1")
             input("\nPresiona Enter para continuar...")
@@ -52,7 +53,7 @@ def menu_ciberseguridad():
         console.print("[bold red][10][/bold red] ⚙️ [bold]10 - Integridad de Archivos[/bold]-> Verificación de hashes e integridad de binarios")
         console.print("[bold red][0][/bold red]  ↩️ [bold]0 - Volver[/bold]                 -> Retornar al Centro de Comandos Principal")
 
-        op = input("\n[bold yellow]👉 Selecciona una opción [0-10]: [/bold yellow]").strip()
+        op = input("\n👉 Selecciona una opción [0-10]: ").strip()
         
         if op == "1":
             target = input("Ingresá IP o Dominio objetivo: ")
@@ -103,7 +104,7 @@ def menu_multimedia():
         console.print("[bold magenta][2][/bold magenta] 🎥 [bold]2 - Codecs & FFmpeg[/bold]    -> Verificación de herramientas y conversión de video")
         console.print("[bold red][0][/bold red] ↩️ [bold]0 - Volver[/bold]             -> Retornar al Centro de Comandos Principal")
 
-        op = input("\n[bold yellow]👉 Selecciona una opción [0-2]: [/bold yellow]").strip()
+        op = input("\n👉 Selecciona una opción [0-2]: ").strip()
         if op == "1":
             console.print("[cyan]Iniciando gestor multimedia...[/cyan]")
             input("\nPresiona Enter para continuar...")
@@ -123,7 +124,7 @@ def menu_pip():
         console.print("[bold yellow][3][/bold yellow] 🔄 [bold]3 - Actualizar Entorno[/bold] -> Buscar y actualizar librerías obsoletas")
         console.print("[bold red][0][/bold red] ↩️ [bold]0 - Volver[/bold]             -> Retornar al Centro de Comandos Principal")
 
-        op = input("\n[bold yellow]👉 Selecciona una opción [0-3]: [/bold yellow]").strip()
+        op = input("\n👉 Selecciona una opción [0-3]: ").strip()
         if op == "1":
             os.system("pip list")
             input("\nPresiona Enter para continuar...")
@@ -147,7 +148,7 @@ def menu_git():
         console.print("[bold cyan][3][/bold cyan] 📊 [bold]3 - Estado del Repo[/bold]    -> Ver modificaciones pendientes (Git Status)")
         console.print("[bold red][0][/bold red] ↩️ [bold]0 - Volver[/bold]             -> Retornar al Centro de Comandos Principal")
 
-        op = input("\n[bold yellow]👉 Selecciona una opción [0-3]: [/bold yellow]").strip()
+        op = input("\n👉 Selecciona una opción [0-3]: ").strip()
         if op == "1":
             os.system("git add .")
             msg = input("Mensaje del commit: ")
@@ -194,23 +195,41 @@ def chat_con_ia_menu():
         return
 
     console.clear()
-    console.print(Panel(Align.center("[bold bright_magenta]🤖 CHAT INTELIGENTE - GEMINI 2.5 FLASH[/bold bright_magenta]\n[dim]Escribí 'salir' para volver al menú principal[/dim]"), border_style="bright_magenta"))
+    console.print(Panel(Align.center("[bold bright_magenta]🤖 ASISTENTE INTELIGENTE - GEMINI 3.8 FLASH[/bold bright_magenta]\n[dim]Escribí [bold yellow]/salir[/bold yellow] para volver al menú principal[/dim]"), border_style="bright_magenta"))
 
     try:
-        chat = client.chats.create(model="gemini-2.5-flash")
+        chat = client.chats.create(model="gemini-3.8-flash")
     except Exception as e:
         console.print(f"\n[bold red]❌ Error al iniciar chat: {e}[/bold red]")
         input("\nPresiona Enter para continuar...")
         return
 
     while True:
-        pregunta = input("\n[bold cyan]👤 Tú:[/bold cyan] ")
-        if pregunta.lower() in ["salir", "exit", "q"]:
+        pregunta = console.input("\n[bold bright_cyan]👤 Tú:[/bold bright_cyan] ").strip()
+        
+        # Única forma de salir tipeando el comando específico /salir
+        if pregunta.lower() == "/salir":
+            console.print("\n[bold yellow]↩️ Saliendo del chat inteligente...[/bold yellow]")
             break
+            
+        if not pregunta:
+            continue
+
         try:
-            console.print("[yellow]⚡ Pensando...[/yellow]")
+            console.print("[bold yellow]⚡ Pensando respuesta...[/bold yellow]")
             resp = chat.send_message(pregunta)
-            console.print(f"\n[bold green]🤖 Gemini:[/bold green] {resp.text}")
+            
+            console.print()
+            console.print(
+                Panel(
+                    Markdown(resp.text),
+                    title="[bold bright_magenta]🤖 Gemini[/bold bright_magenta]",
+                    title_align="left",
+                    border_style="bright_magenta",
+                    padding=(1, 2)
+                )
+            )
+            
         except Exception as e:
             console.print(f"\n[bold red]❌ Error: {e}[/bold red]")
 
@@ -257,7 +276,7 @@ def mostrar_menu():
         console.print(Align.center(table))
         console.print(Align.center("\n[dim bright_white]────────────────────────────────────────────────────────────────────────────[/dim bright_white]"))
 
-        opcion = input("\n[bold bright_yellow]👉 Selecciona una opción del menú [0-9]: [/bold bright_yellow]").strip()
+        opcion = input("\n👉 Selecciona una opción del menú [0-9]: ").strip()
 
         if opcion == "1":
             menu_sistema()
